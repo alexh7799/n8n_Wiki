@@ -98,7 +98,7 @@ volumes:
 
 > ⚠️ **This is a minimal example configuration** – suitable for local testing and getting started quickly.  
 > For a production-ready setup (with PostgreSQL, a reverse proxy, and secrets management) see the dedicated guide:  
-> 👉 [Production Docker Compose](./docker-compose-production.md)
+> 👉 [Production Docker Compose](./Docker-Production.md)
 
 ---
 
