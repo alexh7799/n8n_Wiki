@@ -1,145 +1,216 @@
-# Install with Docker
+# Install with Docker [Linux]
 
 [To Home](../../README.md)
 
-## Installation of n8n with Docker on Linux
+> **Who is this guide for?**  
+> For everyone who wants to run n8n locally or on a server – even without any prior knowledge. Every step is explained in detail.
+>
+> For Windows/macOS users, only the software "*Docker Desktop*" is needed [docker.com](https://www.docker.com/get-started/) – then continue with [Step 2](#step-2-create-project-folder)
 
-This Markdown section provides a complete setup guide for installing n8n on a Linux system using Docker and Docker Compose. It covers system preparation, Docker installation, project structure, configuration, and running n8n.
+## Step 1: Install Docker
 
-## System Requirements
+Docker is the foundation – it runs programs in isolated "containers" without installing anything directly on your system.
 
-- Linux distribution such as Ubuntu, Debian, CentOS, or Fedora
-- Docker installed
-- Docker Compose installed
-- A dedicated directory for n8n (for example /opt/n8n or ~/n8n)
+### Linux (Ubuntu/Debian)
 
-## Install Docker on Linux
-
-### Update your system
+Run these commands one by one in your terminal:
 
 ```bash
-sudo apt update && sudo apt upgrade -y
-```
+# Update package lists
+sudo apt update
 
-### Install Docker
+# Install Docker
+sudo apt install -y docker.io docker-compose-plugin
 
-```bash
-curl -fsSL https://get.docker.com | sudo bash
-```
-
-### Enable and start Docker
-
-```bash
-sudo systemctl enable docker
-sudo systemctl start docker
-```
-
-### Add your user to the Docker group
-
-```bash
+# Allow Docker to run without sudo (one-time setup, re-login afterwards)
 sudo usermod -aG docker $USER
 ```
 
-Log out and back in to apply the group change.
+### Verify the Installation
 
-## Install Docker Compose
-
-```bash
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-```
-
-Check the version:
+Open a terminal (or command prompt) and run:
 
 ```bash
-docker-compose --version
+docker --version
+docker compose version
 ```
 
-## Recommended Project Structure
+You should see something like this:
 
-```Code
-n8n/
-├─ docker-compose.yml
-└─ .env
+```bash
+Docker version 26.x.x
+Docker Compose version v2.x.x
 ```
 
-## docker-compose.yml Configuration
+> ⚠️ If `docker compose` doesn't work, try the older `docker-compose` (with a hyphen). In recent Docker versions, Compose is already included.
+
+---
+
+## Step 2: Create Project Folder
+
+Create a folder for your n8n project. All configuration files will go in here.
+
+```bash
+mkdir n8n-project
+cd n8n-project
+```
+
+---
+
+## Step 3: Create `docker-compose.yml`
+
+Create a new file in this folder named `docker-compose.yml` and paste the following content:
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   n8n:
-    image: n8nio/n8n:latest
+    image: docker.n8n.io/n8nio/n8n
     container_name: n8n
+    restart: unless-stopped
     ports:
       - "5678:5678"
     environment:
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=${N8N_USER}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
-      - N8N_HOST=${N8N_HOST}
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      - NODE_ENV=production
+      - GENERIC_TIMEZONE=Europe/Berlin
+      - TZ=Europe/Berlin
     volumes:
-      - ./data:/home/node/.n8n
-    restart: unless-stopped
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  n8n_data:
 ```
 
-## .env Configuration
+**What do the individual settings mean?**
 
-```env
-N8N_USER=admin
-N8N_PASSWORD=supersecurepassword
-N8N_HOST=localhost
-```
+| Setting | Meaning |
+| ------- | ------- |
+| `image` | The official n8n Docker image that will be downloaded |
+| `container_name: n8n` | Gives the container the name "n8n" |
+| `restart: unless-stopped` | n8n restarts automatically (e.g. after a server reboot) |
+| `ports: "5678:5678"` | n8n is accessible on port 5678 (left = your PC, right = container) |
+| `GENERIC_TIMEZONE` | Sets the timezone (important for scheduled workflows!) |
+| `volumes` | Saves all workflows & settings permanently – even after updates |
 
-For production setups with a domain, change N8N_PROTOCOL to https.
+> 💡 **Tip for Windows users:** Use **VS Code** or the standard **Notepad** (not Word!) to create the file.
 
-## Start n8n
+---
 
-Run n8n in detached mode:
+> ⚠️ **This is a minimal example configuration** – suitable for local testing and getting started quickly.  
+> For a production-ready setup (with PostgreSQL, a reverse proxy, and secrets management) see the dedicated guide:  
+> 👉 [Production Docker Compose](./docker-compose-production.md)
+
+---
+
+## Step 4: Start n8n
+
+Run the following command inside your project folder:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-View logs:
+**What happens now?**
 
-```bash
-docker-compose logs -f
-```
+1. Docker downloads the n8n image (first time only, may take a moment)
+2. The container starts and runs in the background
+3. Your data is safely stored in the `n8n_data` volume
 
-## Access n8n
+> The `-d` flag stands for **detached** – n8n runs silently in the background, your terminal stays free.
 
-Local machine:
+---
+
+## Step 5: Open n8n in the Browser
+
+Open your browser and navigate to:
 
 ```Code
 http://localhost:5678
 ```
 
-Remote Linux server:
+On the first visit you will be prompted to create an **admin account**. Fill in the fields and remember your password!
 
-```Code
-http://YOUR-SERVER-IP:5678
-```
+**n8n is running!** You can now start building your first workflows.
 
-## Persistent Data
+---
 
-All workflow data is stored in the ./data directory.
-This directory should be backed up regularly, especially in production environments.
-
-## Update n8n
+## Useful Commands at a Glance
 
 ```bash
-docker-compose pull
-docker-compose up -d
+# Start n8n (in the background)
+docker compose up -d
+
+# Stop n8n
+docker compose down
+
+# Show logs (for debugging)
+docker compose logs -f n8n
+
+# Restart n8n
+docker compose restart n8n
+
+# Update to a new version
+docker compose pull
+docker compose up -d
 ```
 
-## Optional Enhancements
+---
 
-- Reverse proxy with SSL (Traefik, Nginx, Caddy)
-- PostgreSQL database for improved performance
-- Watchtower for automated container updates
-- Systemd integration for server-level management
+## Optional: Make n8n Accessible from the Internet (with a Domain)
+
+If you want n8n to be reachable from outside your local network (e.g. for webhooks), you need:
+
+1. A server with a public IP address
+2. A domain pointing to that server
+3. A reverse proxy (e.g. **Nginx Proxy Manager** or **Caddy**)
+
+Add these environment variables to your `docker-compose.yml`:
+
+```yaml
+environment:
+  - N8N_HOST=your-domain.com
+  - N8N_PORT=5678
+  - N8N_PROTOCOL=https
+  - WEBHOOK_URL=https://your-domain.com/
+  - GENERIC_TIMEZONE=Europe/Berlin
+  - TZ=Europe/Berlin
+```
+
+> 💡 **Tip:** For an easy HTTPS setup, [Nginx Proxy Manager](https://nginxproxymanager.com/) is recommended – it can also be run with Docker.
+
+---
+
+## 🔐 Security Tips
+
+If n8n is publicly accessible, keep these points in mind:
+
+- **Enable user login:** On first launch you will be prompted to create an account. Don't skip this!
+- **Use a strong password:** At least 12 characters, upper and lowercase letters, numbers and special characters.
+- **Regular updates:** Run `docker compose pull && docker compose up -d` regularly.
+- **Firewall:** Make sure port 5678 is only open to trusted IPs if you are not using a reverse proxy.
+
+---
+
+### Backup / Restore Data
+
+Your data is stored in the Docker volume `n8n_data`. To create a backup:
+
+```bash
+docker run --rm \
+  -v n8n_data:/data \
+  -v $(pwd):/backup \
+  busybox tar czf /backup/n8n-backup.tar.gz /data
+```
+
+---
+
+## 📚 Further Reading
+
+- [Official n8n Documentation](https://docs.n8n.io/)
+- [n8n Docker Hub](https://hub.docker.com/r/n8nio/n8n)
+- [n8n Community Forum](https://community.n8n.io/)
+- [Docker Docs](https://docs.docker.com/)
+
+---
+
+Last updated: March 2026

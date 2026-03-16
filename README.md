@@ -12,3 +12,7 @@ A lively and accessible knowledge base for everything related to n8n — from fo
 3. [Tipps](tipps/README.md)
 4. [Troubleshooting](troubleshooting/README.md)
 5. [Best Practices](best_practices/README.md)
+
+---
+
+Last updated: March 2026

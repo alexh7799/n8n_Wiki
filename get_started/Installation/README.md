@@ -9,3 +9,7 @@
 ## Install with NodeJS
 
 [Install with NodeJS](NodeJS.md)
+
+---
+
+Last updated: March 2026
